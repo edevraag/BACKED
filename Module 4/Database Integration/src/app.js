@@ -1,3 +1,4 @@
+
 const express = require('express');
 const postController = require('./controllers/postController');
 
@@ -11,7 +12,29 @@ app.patch('/posts/:id', postController.update);
 app.delete('/posts/:id', postController.remove);
 
 app.use((error, req, res, next) => {
-  res.status(error.statusCode || 500).json({ error: error.message });
+  if (error.code === 'P2002') {
+    return res.status(409).json({
+      error: 'A record with these details already exists',
+    });
+  }
+
+  if (error.code === 'P2003') {
+    return res.status(422).json({
+      error: 'Referenced record does not exist',
+    });
+  }
+
+  if (error.code === 'P2025') {
+    return res.status(404).json({
+      error: 'Record not found',
+    });
+  }
+
+  const status = error.statusCode || 500;
+
+  return res.status(status).json({
+    error: status >= 500 ? 'Internal server error' : error.message,
+  });
 });
 
 if (require.main === module) {
